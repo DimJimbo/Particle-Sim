@@ -19,18 +19,6 @@ uniform_int_distribution<int> getRandomX(0, WINDOW_WIDTH);
 uniform_int_distribution<int> getRandomY(0, WINDOW_HEIGHT);
 uniform_int_distribution<int> getRandomRGBValue(0, 255);
 
-/*
-class Body {
-    public:
-        Vector2 position, velocity;
-        RGBColor color;
-        
-        Body(int R, int G, int B, int x, int y, double vx = 0, double vy = 0) : position{x, y}, velocity{vx, vy}, color{R, G, B} {}
-        Body(const RGBColor& _color, const Vector2& _position, const Vector2& _velocity) : color(_color), position(_position), velocity(_velocity) {}
-};
-*/
-
-
 class Body {
     public:
         float x, y, vx, vy;
@@ -287,58 +275,6 @@ class Simulator {
                 b1->y += b1->vy*dt;
             }
         }
-
-/*
-        void basicGravity()
-        {
-            for (int i = 0; i < N; i++) {
-                Body* b1 = bodies[i];
-
-                for (int j = i + 1; j < N; j++) {
-                    Body* b2 = bodies[j];
-
-                    Vector2 posdiff = b2->position - b1->position;
-                    float dist = posdiff.length;
-                    
-                    
-                    // Also handle collisions because why not
-
-                    if (dist < MIN_GRAV_DIST) {
-                        // Find the overlap between the bodies, and move them so they dont overlap
-
-
-                        // Find the objects new velocities
-                        
-                        // calculate the difference between their velocities
-                        Vector2 veldiff = b2->velocity - b1->velocity;
-
-                        // calculate the normal component of veldiff
-
-                        float v_norm = veldiff.dot(posdiff.normalized());
-
-                        if (v_norm > 0) continue; // The collision has happened, they're just moving away from eachother 
-
-                        Vector2 J = (1 + elasticity)*v_norm*BODY_MASS/2*posdiff.normalized();
-
-                        b1->velocity += J/BODY_MASS;
-                        b2->velocity -= J/BODY_MASS;
-
-                    } else if (dist > MAX_GRAV_DIST) {
-                        continue;
-                    } else if (dist > MIN_GRAV_DIST) {
-
-                        Vector2 F = (G_MASS_MASS/dist/dist)*posdiff.normalized();
-
-                        Vector2 V = F/BODY_MASS*dt;
-
-                        b1->velocity += V;
-                        b2->velocity -= V;
-                    }
-                }
-                b1->position += b1->velocity*dt;
-            }
-        }
-*/
 };
 
 int main()
