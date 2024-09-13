@@ -2,8 +2,6 @@
 #include <random>
 #include <ctime>
 
-#include <set>
-
 #include "../Simulator/containers.h"
 
 #include <SDL2/SDL.h>
