@@ -11,29 +11,34 @@
 class Vector2 {
     public:
         float x, y;
-        float length;
 
         // Both x and y are automatically converted to floats
-        template <typename T1, typename T2> Vector2(T1 _x, T2 _y) : x((float) _x), y((float) _y) 
-        {
-            length = sqrt(x*x + y*y);
-        }
+        template <typename T1, typename T2> Vector2(T1 _x, T2 _y) : x((float) _x), y((float) _y) {}
 
         Vector2() : x(0.0), y(0.0) {};
 
         
-
-        Vector2 operator +(const Vector2& vec)
+        Vector2 operator +(const Vector2& vec) const
         {
             return Vector2(x + vec.x, y + vec.y);
         }
 
-        Vector2 operator -(const Vector2& vec)
+        Vector2 operator +() const
+        {
+            return Vector2(x, y);
+        }
+
+        Vector2 operator -(const Vector2& vec) const
         {
             return Vector2(x - vec.x, y - vec.y);
         }
 
-        template<typename T> Vector2 operator *(T scalar)
+        Vector2 operator -() const
+        {
+            return Vector2(-x, -y);
+        }
+
+        template<typename T> Vector2 operator *(T scalar) const
         {
             return Vector2(scalar*x, scalar*y);
         }
@@ -44,12 +49,12 @@ class Vector2 {
             return Vector2(scalar*vec.x, scalar*vec.y);
         }
 
-        float operator *(const Vector2& vec)
+        float operator *(const Vector2& vec) const
         {
             return this->dot(vec); 
         }
 
-        template<typename T> Vector2 operator /(T scalar)
+        template<typename T> Vector2 operator /(T scalar) const
         {
             return Vector2(x/scalar, y/scalar);
         }
@@ -69,6 +74,11 @@ class Vector2 {
             return *this;
         }
 
+        bool operator ==(const Vector2& vec) const
+        {
+            return (x == vec.x && y == vec.y);
+        }
+
         template<typename T> Vector2& operator *=(T scalar)
         {
             x *= scalar;
@@ -86,17 +96,39 @@ class Vector2 {
         // returns a new vector, currently there's no in-place version
         Vector2 normalized()
         {
-            return (*this)/length;
+            return (*this)/getLength();
         }
 
-        float dot(const Vector2& vec)
+        float dot(const Vector2& vec) const
         {
             return x*vec.x + y*vec.y;
         }
 
-        float angleTo(const Vector2& vec) // Outputs Degrees
+        float angleTo(const Vector2& vec) const // Outputs Degrees
         {
-            return acos((x*vec.x + y*vec.y)/(length*vec.length))*180/M_PI;        
+            return acos((x*vec.x + y*vec.y)/(getLength()*vec.getLength()))*180/M_PI;        
+        }
+
+        float getLength() const
+        {
+            return sqrt(x*x + y*y);
+        }
+
+        float getLengthSquared() const
+        {
+            return x*x + y*y;
+        }
+
+        float getDistanceTo(const Vector2& vec) const
+        {
+            Vector2 diff = vec - *this;
+
+            return diff.getLength();
+        }
+
+        float getDistanceSquaredTo(const Vector2& vec) const
+        {
+            return (vec - (*this)).getLengthSquared();
         }
 
 };

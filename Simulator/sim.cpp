@@ -1,8 +1,8 @@
 #include <iostream>
-#include <vector>
 #include <random>
 #include <ctime>
-#include <string>
+
+#include <set>
 
 #include "../Simulator/containers.h"
 
@@ -16,33 +16,21 @@ mt19937 rng(dev());
 
 class Body {
     public:
-        float x, y, vx, vy;
+        Vector2 position, velocity, acceleration;
         RGBColor color;
 
-        Body(int R, int G, int B, int _x, int _y, double _vx = 0, double _vy = 0) : color{R, G, B} {
-            x = _x;
-            y = _y;
-            vx = _vx;
-            vy = _vy;
-        }
+        Body(int R, int G, int B, int x, int y, float vx = 0, float vy = 0) : color{R, G, B}, position{x, y}, velocity{vx, vy}, acceleration{0, 0} {}
 };
 
 struct Options {
     int WINDOW_WIDTH = 1000;
     int WINDOW_HEIGHT = 1000;
-    int SIM_WIDTH = 1000;
-    int SIM_HEIGHT = 1000;
-    int UPDATE_BODIES_EVERY = 2;
-    double dt = 100;
-    double elasticity = 0.5;
+    int SIM_WIDTH = 2000;
+    int SIM_HEIGHT = 2000;
 
     int BODY_MASS = 10;
     int BODY_RADIUS = 3;
     int BODY_N = 1000;
-
-    int MAX_GRAV_DIST = 2000;
-
-    RGBColor BG_COLOR = {0, 0, 0, 255};
 
     const char* BodyCreationType = "RANDOM";
 };
@@ -50,6 +38,12 @@ struct Options {
 
 class Simulator {
     public:
+
+        int CORRECT_OVERLAP_BY = 1, COLLISION_ITERS = 5;
+        int MIN_GRAV_DIST, MAX_GRAV_DIST = 2000;
+        float E = 0, elasticity = 0.5, dt = 10;
+
+        RGBColor BG_COLOR = {0, 0, 0, 255};
 
         Options opt;
 
@@ -120,11 +114,15 @@ class Simulator {
                     }
                 }
 
-                if (total_frames % opt.UPDATE_BODIES_EVERY == 0 && !ispaused) gravityFunc();
+                if (!ispaused) { 
+                    updateBodies();
+                    handleCollisions();
+                    // cout << E << "\n";
+                }
                 clear_screen();
                 update_screen();
             }
-
+            // cout << ((float) total_frames) / 1000 << " kFrames\n";
             SDL_DestroyWindow(win);
             SDL_DestroyRenderer(renderer);
             SDL_Quit();
@@ -140,14 +138,13 @@ class Simulator {
         SDL_Window* win;
         SDL_Surface* surf;
 
-        double G_MASS_MASS;
-        int MIN_GRAV_DIST;
-
+        float G_MASS_MASS;
+        
         int offset_x = 0, offset_y = 0;
-        float zoom = 1;
+        float zoom = 1.0;
         bool ispaused = false;
 
-        const double epsilon = 0.001, G = 6.67e-6, CORRECT_OVERLAP_BY = 0.8;
+        const float epsilon = 0.001, G = 6.67e-6;
 
         void initSDL()
         {
@@ -177,39 +174,40 @@ class Simulator {
             if (opt.BodyCreationType == "RANDOM") {
                 for (int i = 0; i < opt.BODY_N; i++) {
                     int x = getRandomX(rng), y = getRandomY(rng), R = getRandomRGBValue(rng), G = getRandomRGBValue(rng), B = getRandomRGBValue(rng);
-                    
                     bodies[i] = new Body(R, G, B, x, y);
                 }
             }
         }
         
-        inline void clear_screen()
+        void clear_screen()
         {
-            SDL_SetRenderDrawColor(renderer, opt.BG_COLOR.r, opt.BG_COLOR.g, opt.BG_COLOR.b, opt.BG_COLOR.a); // set drawing color
+            SDL_SetRenderDrawColor(renderer, BG_COLOR.r, BG_COLOR.g, BG_COLOR.b, BG_COLOR.a); // set drawing color
             SDL_RenderClear(renderer); // clear screen (with the drawing color)
         }
 
-        inline int getDisplayX(int x)
+        int getDisplayX(int x)
         {
             return round((x + offset_x - opt.WINDOW_WIDTH/2)*zoom + opt.WINDOW_WIDTH/2);
         }
 
-        inline int getDisplayY(int y)
+        int getDisplayY(int y)
         {
             return round((y + offset_y - opt.WINDOW_HEIGHT/2)*zoom + opt.WINDOW_HEIGHT/2);
         }
 
-        inline int getDisplayRadius(int r)
+        int getDisplayRadius(int r)
         {
             return round(r*zoom);
         }
 
-        inline void update_screen()
+        //=====================MAIN FUNCTIONS=====================//
+
+        void update_screen()
         {
             for (int i = 0; i < opt.BODY_N; i++) {
                 Body& b = *bodies[i];
-                int x = getDisplayX(b.x);
-                int y = getDisplayY(b.y);
+                int x = getDisplayX(b.position.x);
+                int y = getDisplayY(b.position.y);
                 if (x < 0 || y < 0 || x > opt.WINDOW_WIDTH || y > opt.WINDOW_HEIGHT) continue;
                 
                 SDL_SetRenderDrawColor(renderer, b.color.r, b.color.g, b.color.b, b.color.a);
@@ -218,11 +216,11 @@ class Simulator {
             SDL_RenderPresent(renderer); // draw all stuff on screen
         }
 
-        inline void drawFunc(int cx, int cy, float r) // just bresenhams, although chatgpt made this so watch out
+        void drawFunc(int cx, int cy, float r) // just bresenhams, although chatgpt made this so watch out
         {
             int x = 0;
             int y = r;
-            int d = 3 - 2 * r;
+            int d = 3 - 2*r;
 
             while (y >= x) {
                 SDL_RenderDrawLine(renderer, cx - x, cy + y, cx + x, cy + y);
@@ -231,99 +229,110 @@ class Simulator {
                 SDL_RenderDrawLine(renderer, cx - y, cy - x, cx + y, cy - x);
 
                 if (d <= 0) {
-                    d = d + 4 * x + 6;
+                    d += 4*x + 6;
                 } else {
-                    d = d + 4 * (x - y) + 10;
+                    d += 4*(x - y) + 10;
                     y--;
                 }
                 x++;
             }
         }
 
-        void collisionFunc(Body& b1, Body& b2)
+        void handleCollisions()
         {
-            double dx = b2.x - b1.x;
-            double dy = b2.y - b1.y;
-            double dist = sqrt(dx*dx + dy*dy);
+            for (int k = 0; k < COLLISION_ITERS; k++) {
+                // first get a list of all colliding bodies
+                // By doing this first, it improves cache locality and increases hits, as the generated array is (in most cases) small
+                vector<Body*> colliding_bodies = {};
+                int colliding_BODY_N = 0;
+                for (int i = 0; i < opt.BODY_N; i++) {
+                    Body* b1 = bodies[i];
+                    
+                    for (int j = i + 1; j < opt.BODY_N; j++) {
+                        Body* b2 = bodies[j];
+                        if (b1->position.getDistanceTo(b2->position) < MIN_GRAV_DIST)
+                        {
+                            // They're saved as pairs
+                            colliding_bodies.push_back(b1);
+                            colliding_bodies.push_back(b2);
+                            colliding_BODY_N += 2;
+                        }
+                    }
+                }
 
-            double sin = dy/dist, cos = dx/dist;
-            double overlap = 2*opt.BODY_RADIUS - dist;
+                // then apply changes to resolve each collision
+                for (int i = 0; i < colliding_BODY_N; i += 2) {
+
+                    Body& b1 = *colliding_bodies[i];
+                    Body& b2 = *colliding_bodies[i + 1];
                         
-            b1.x -= overlap*cos/2*CORRECT_OVERLAP_BY;
-            b1.y -= overlap*sin/2*CORRECT_OVERLAP_BY;
+                    // find the 
+                    Vector2 diff = b2.position - b1.position;
+                    Vector2 diff_normalized = diff.normalized();
+                    Vector2 overlap = (2*opt.BODY_RADIUS - diff.getLength())*diff_normalized;
 
-            b2.x += overlap*cos/2*CORRECT_OVERLAP_BY;
-            b2.y += overlap*sin/2*CORRECT_OVERLAP_BY;
-            
-            // find the relative velocity of the bodies
+                    b1.position -= overlap/2*CORRECT_OVERLAP_BY;
+                    b2.position += overlap/2*CORRECT_OVERLAP_BY;
+                    
+                    // find the relative velocity of the bodies
 
-            double dvx = b2.vx - b1.vx;
-            double dvy = b2.vy - b1.vy;
+                    Vector2 dV = b2.velocity - b1.velocity;
 
-            // find the normal component of the relative velocity
+                    // find the normal component of the relative velocity
 
-            double dv_norm = dvx*cos + dvy*sin;
+                    float dV_norm = dV.dot(diff_normalized);
 
-            if (dv_norm > 0) return; // means that they are moving away from eachother, sooooo no collision needed, although idk if its needed
+                    if (dV_norm > 0) continue; // means that they are moving away from eachother, sooooo no collision needed, although idk if its needed
 
-            // find impulse
+                    // find impulse
 
-            double J = (1 + opt.elasticity)*dv_norm/2; // normally this need to be multiplied by BODY_MASS, but since we would have divided later...
+                    Vector2 J = (1 + elasticity)*dV_norm/2*diff_normalized; // normally this need to be multiplied by BODY_MASS, but we would have divided later...
 
-            double J_collision_x = J*cos;
-            double J_collision_y = J*sin;
+                    // apply shit
 
-            // apply shit
-
-            b1.vx += J_collision_x;
-            b1.vy += J_collision_y;
-
-            b2.vx -= J_collision_x;
-            b2.vy -= J_collision_y;
+                    b1.velocity += J;
+                    b2.velocity -= J;
+                }
+            }
         }
 
-        // seems like my Vector2 implementation is slow af, so I'll stick with this
-        // Known Bug: if dist is 0, everything crashes, which pretty much only happens due to bad placement during body generation
-        void gravityFunc()
+        Vector2 getF(Body& b1, Body& b2)
         {
+            Vector2 diff = b2.position - b1.position;
+
+            Vector2 F_gravity = G_MASS_MASS/diff.getLengthSquared()*diff.normalized();
+
+            return F_gravity;
+
+        }
+
+        // Known Bug: if dist is 0, everything crashes, which pretty much only happens due to bad placement during body generation
+        void updateBodies() // Uses symplectic euler
+        {
+            E = 0;
+
             for (int i = 0; i < opt.BODY_N; i++) {
                 Body& b1 = *bodies[i];
 
                 for (int j = i + 1; j < opt.BODY_N; j++) {
                     Body& b2 = *bodies[j];
 
-                    double dx = b2.x - b1.x;
-                    double dy = b2.y - b1.y;
-                    double dist = sqrt(dx*dx + dy*dy);
-
-                    double sin = dy/dist;
-                    double cos = dx/dist;
+                    float dist = b2.position.getDistanceTo(b1.position);
                     
-                    if (dist <= MIN_GRAV_DIST) {
-                        collisionFunc(b1, b2);
-                    } else if (dist > opt.MAX_GRAV_DIST) {
-                        continue;
-                    } else {
-
-                        double F_gravity = G_MASS_MASS/dist/dist;
-                        double F_gravity_x = F_gravity*cos;
-                        double F_gravity_y = F_gravity*sin;
-
-                        double Vx = F_gravity_x/opt.BODY_MASS*opt.dt;
-                        double Vy = F_gravity_y/opt.BODY_MASS*opt.dt;
-
-                        b1.vx += Vx;
-                        b1.vy += Vy;
-                        
-                        b2.vx -= Vx;
-                        b2.vy -= Vy;
-                    }
+                    if (dist < MIN_GRAV_DIST || dist > MAX_GRAV_DIST) continue;
                     
+                    Vector2 A = getF(b1, b2)/opt.BODY_MASS;
+                    
+                    b1.acceleration += A;
+                    b2.acceleration -= A;
                 }
-                b1.x += b1.vx;
-                b1.y += b1.vy;
-            }
 
+                b1.velocity += b1.acceleration*dt;
+                b1.position += b1.velocity;
+            
+                b1.acceleration *= 0;
+                E += opt.BODY_MASS*b1.velocity.getLengthSquared()/2;
+            }
         }
 
 };
