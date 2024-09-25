@@ -74,6 +74,12 @@ class Vector2 {
             return *this;
         }
 
+        void operator =(const Vector2& vec)
+        {
+            x = vec.x;
+            y = vec.y;
+        }
+
         bool operator ==(const Vector2& vec) const
         {
             return (x == vec.x && y == vec.y);
@@ -131,6 +137,21 @@ class Vector2 {
             return (vec - (*this)).getLengthSquared();
         }
 
+        int getIntX()
+        {
+            return (int) x;
+        }
+
+        int getIntY()
+        {
+            return (int) y;
+        }
+
+};
+
+class Size {
+    public:
+        int width, height;
 };
 
 class RGBColor{
