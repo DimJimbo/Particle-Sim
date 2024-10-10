@@ -351,7 +351,7 @@ class Simulator {
                 int b_tl = opt.BODY_N - b_br;
                 
                 Vector2 v_tl(0, 0);
-                Vector2 v_br(-1, -1.005);
+                Vector2 v_br(-0.5, -0.5);
 
                 MAX_GRAV_DIST = sqrt(opt.SIM_WIDTH*opt.SIM_WIDTH + opt.SIM_HEIGHT*opt.SIM_HEIGHT); // so the bodies are attracted to eachother
 
