@@ -5,7 +5,7 @@ Particle-Sim is my passion project, a small gravity simulator written in C++,
 with SDL for rendering and no physics libraries used. Everything is coded by me.
 
 Currently, its ***really*** not in ***any*** way finished,
-and as such there isn't really much to discuss about it.
+and as such there isn't really much to discuss about it. This is mainly to *"showcase"* it, as unless you want to dive into the code and change things yourself, there isn't much customization to be had, although you could compile and run it to see the simulation in action.
 
 The goal of this project is to make a simulatir of astrophysical phenomena, 
 mainly collisions of bodies, that is:
@@ -42,7 +42,7 @@ while maintaining accuracy.
   + finally, updating positions using the updated velocity
 
 ## Future Additions
-
+What I consider to add in future updates. There are more  but these are the main ones: 
 + Implementing some symplectic intergrator, either leapfrog or verlet
 + Adding a quadtree or grid implementation, to speed up both collisions and gravity
 + Heat
@@ -56,5 +56,6 @@ a collection of bodies that are touching will, *inevitably*, start gaining momen
 will start spinning faster and faster, until it breaks apart, which is quite unrealistic
 + While care has been put into being able to support lots of bodies simultaniously,
 an average laptop could support only up to 700 bodies while still running at 60fps.
++ No friction, no heat
 + There is no UI, nor any actual graphics, just circles.
 + The code could be cleaner, and some classes are too bloated.
