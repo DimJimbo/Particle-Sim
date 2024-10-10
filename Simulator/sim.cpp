@@ -24,12 +24,12 @@ class Body {
 struct Options {
     int WINDOW_WIDTH = 1300;
     int WINDOW_HEIGHT = 1000;
-    long SIM_WIDTH = 60000;
-    long SIM_HEIGHT = 60000;
+    long SIM_WIDTH = 40000;
+    long SIM_HEIGHT = 40000;
 
     int BODY_MASS = 100;
     int BODY_RADIUS = 3;
-    int BODY_N = 5000;
+    int BODY_N = 1000;
 
     const char* BodyCreationType = "COLLISION";
 };
