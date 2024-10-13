@@ -7,7 +7,7 @@ with SDL for rendering and no physics libraries used. Everything is coded by me.
 Currently, its ***really*** not in ***any*** way finished,
 and as such there isn't really much to discuss about it. This is mainly to *"showcase"* it, as unless you want to dive into the code and change things yourself, there isn't much customization to be had, although you could compile and run it to see the simulation in action.
 
-The goal of this project is to make a simulatir of astrophysical phenomena, 
+The goal of this project is to make a simulation of astrophysical phenomena, 
 mainly collisions of bodies, that is:
 - fast
 - accurate
@@ -54,7 +54,7 @@ There are several limitations currently:
 + Due to the use of euler integration, and possibly due to some specifics in collision handling,
 a collection of bodies that are touching will, *inevitably*, start gaining momentum, and the whole collection
 will start spinning faster and faster, until it breaks apart, which is quite unrealistic
-+ While care has been put into being able to support lots of bodies simultaniously,
++ While care has been put into being able to support lots of bodies simultaneously,
 an average laptop could support only up to 700 bodies while still running at 60fps.
 + No friction, no heat
 + There is no UI, nor any actual graphics, just circles.
